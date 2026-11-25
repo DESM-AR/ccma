@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f2a3d">
+<meta name="theme-color" content="#011b30">
 <meta name="description" content="CCMA · Cuentas Claras Mantienen la Amistad. Dividí los gastos del grupo y sabé quién le paga a quién.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -11,10 +11,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CCMA">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20fill%3D%22none%22%20%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230f2a3d%22/%3E%3Cdefs%3E%3Cmask%20id%3D%22fa%22%20maskUnits%3D%22userSpaceOnUse%22%20x%3D%220%22%20y%3D%220%22%20width%3D%2264%22%20height%3D%2264%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23fff%22/%3E%3Cpath%20d%3D%22M26.43%2018.21A14%2014%200%200%201%2035.33%2023.77%22%20stroke%3D%22%23000%22%20stroke-width%3D%229.4%22/%3E%3C/mask%3E%3Cmask%20id%3D%22fb%22%20maskUnits%3D%22userSpaceOnUse%22%20x%3D%220%22%20y%3D%220%22%20width%3D%2264%22%20height%3D%2264%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23fff%22/%3E%3Cpath%20d%3D%22M37.57%2045.79A14%2014%200%200%201%2028.67%2040.23%22%20stroke%3D%22%23000%22%20stroke-width%3D%229.4%22/%3E%3C/mask%3E%3C/defs%3E%3Cpath%20class%3D%22lc%22%20d%3D%22M35.33%2040.23A14%2014%200%201%201%2035.33%2023.77%22%20stroke%3D%22%23c8e64a%22%20stroke-width%3D%226%22%20mask%3D%22url%28%23fb%29%22/%3E%3Cpath%20class%3D%22rc%22%20d%3D%22M28.67%2023.77A14%2014%200%201%201%2028.67%2040.23%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%226%22%20mask%3D%22url%28%23fa%29%22/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>CCMA · Cuentas Claras Mantienen la Amistad</title>
 <style>
-:root{color-scheme:light;--ease-out:cubic-bezier(.23,1,.32,1);--ease-drawer:cubic-bezier(.32,.72,0,1);--go:#16a34a;--navy:#0f2a3d;--navy2:#1b4560;--lime:#c8e64a;--steps-off:#b9d0dd;--bg:#f2f4f1;--ink:#14212b;--muted:#61717c;--line:#e4e8e6;--soft:#f5f7f5;--red:#c03b2b;--red-bg:#fbeae7;--green:#18703e;--green-bg:#e4f3e9;--amber-bg:#fdf2d8}
+:root{color-scheme:light;--ease-out:cubic-bezier(.23,1,.32,1);--ease-drawer:cubic-bezier(.32,.72,0,1);--go:#16a34a;--navy:#011b30;--navy2:#1b4560;--lime:#c8e64a;--steps-off:#b9d0dd;--bg:#f2f4f1;--ink:#14212b;--muted:#61717c;--line:#e4e8e6;--soft:#f5f7f5;--red:#c03b2b;--red-bg:#fbeae7;--green:#18703e;--green-bg:#e4f3e9;--amber-bg:#fdf2d8}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.35;-webkit-tap-highlight-color:transparent}
@@ -151,7 +151,7 @@ input:focus,select:focus{outline:2px solid var(--navy2);outline-offset:-1px}
 .sync.live i{background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.25)}
 .add{display:flex;gap:8px;margin-bottom:12px}
 .add input{flex:1}
-.splash{position:fixed;inset:0;z-index:100;background:radial-gradient(120% 80% at 50% 38%,#1b4560 0%,#0f2a3d 62%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;color:#fff;padding:24px;text-align:center;transition:opacity 320ms ease,transform 420ms var(--ease-out)}
+.splash{position:fixed;inset:0;z-index:100;background:radial-gradient(120% 80% at 50% 45%,#0a2c49 0%,#011b30 62%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;color:#fff;padding:24px;text-align:center;transition:opacity 320ms ease,transform 420ms var(--ease-out)}
 .splash.out{opacity:0;transform:scale(1.04);pointer-events:none}
 .splash .mark{width:168px;height:auto;overflow:visible;animation:mark-in 600ms var(--ease-out) both}
 .splash .mark .lc,.splash .mark .rc{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 700ms cubic-bezier(.65,0,.35,1) 120ms forwards}
@@ -165,10 +165,13 @@ input:focus,select:focus{outline:2px solid var(--navy2);outline-offset:-1px}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes rise{from{opacity:0;transform:translateY(14px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
 @media (prefers-reduced-motion:reduce){.splash .mark,.splash h1 span,.splash p{animation:none}.splash .mark .lc,.splash .mark .rc{animation:none;stroke-dashoffset:0}.splash.out{transform:none}}
+.splash .splash-logo{width:min(86vw,560px);height:auto;animation:logo-in 900ms var(--ease-out) 80ms both}
+@keyframes logo-in{from{opacity:0;transform:translateY(16px) scale(.94);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){.splash .splash-logo{animation:none}}
 </style>
 </head>
 <body>
-<div class="splash" id="splash" role="img" aria-label="CCMA, Cuentas Claras Mantienen la Amistad" data-a="skipSplash"><svg class="mark" width="168" height="168" viewBox="6 14 52 36" fill="none" aria-hidden="true"><defs><mask id="sma" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><path d="M26.43 18.21A14 14 0 0 1 35.33 23.77" stroke="#000" stroke-width="9.4"/></mask><mask id="smb" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><path d="M37.57 45.79A14 14 0 0 1 28.67 40.23" stroke="#000" stroke-width="9.4"/></mask></defs><path pathLength="1" class="lc" d="M35.33 40.23A14 14 0 1 1 35.33 23.77" stroke="#c8e64a" stroke-width="6" mask="url(#smb)"/><path pathLength="1" class="rc" d="M28.67 23.77A14 14 0 1 1 28.67 40.23" stroke="#ffffff" stroke-width="6" mask="url(#sma)"/></svg><h1 aria-hidden="true"><span>C</span><span>C</span><span>M</span><span>A</span></h1><p aria-hidden="true"><b>C</b>uentas <b>C</b>laras <b>M</b>antienen la <b>A</b>mistad</p></div>
+<div class="splash" id="splash" role="img" aria-label="CCMA, Cuentas Claras Mantienen la Amistad" data-a="skipSplash"><img class="splash-logo" src="logo.webp" alt="" width="1100" height="186"></div>
 <div class="app"><header class="top" id="top"></header><main id="main" aria-live="off"></main></div>
 <div class="foot" id="foot"></div><div id="fab"></div>
 <div id="ov"></div><div id="dlg"></div><div id="toast" role="status" aria-live="polite"></div>
@@ -332,7 +335,7 @@ function render(){
   const e=ev();if(STEPS.some(x=>x[0]===SCREEN)&&!e&&SCREEN!=='evento')SCREEN='home';
   const idx=STEPS.findIndex(s=>s[0]===SCREEN);
   const menuBtn=syncBadge()+`<button class="ib" data-a="menu" aria-label="Menú">${ic('menu')}</button>`;
-  if(SCREEN==='home') $('#top').innerHTML=`<div class="bar"><svg style="margin-left:4px;flex:none" width="40" height="40" viewBox="6 14 52 36" fill="none" aria-hidden="true"><defs><mask id="hma" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><path d="M26.43 18.21A14 14 0 0 1 35.33 23.77" stroke="#000" stroke-width="9.4"/></mask><mask id="hmb" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><path d="M37.57 45.79A14 14 0 0 1 28.67 40.23" stroke="#000" stroke-width="9.4"/></mask></defs><path class="lc" d="M35.33 40.23A14 14 0 1 1 35.33 23.77" stroke="#c8e64a" stroke-width="6" mask="url(#hmb)"/><path class="rc" d="M28.67 23.77A14 14 0 1 1 28.67 40.23" stroke="#ffffff" stroke-width="6" mask="url(#hma)"/></svg><h1 style="display:flex;flex-direction:column"><span>CCMA</span><small style="font-size:12px;font-weight:500;color:#a9c3d3">Cuentas Claras Mantienen la Amistad</small></h1>${menuBtn}</div>`;
+  if(SCREEN==='home') $('#top').innerHTML=`<div class="bar"><img src="isotipo.webp" alt="" width="48" height="30" style="margin-left:6px;flex:none;object-fit:contain"><h1 style="display:flex;flex-direction:column"><span>CCMA</span><small style="font-size:12px;font-weight:500;color:#a9c3d3">Cuentas Claras Mantienen la Amistad</small></h1>${menuBtn}</div>`;
   else if(MASTER[SCREEN]) $('#top').innerHTML=`<div class="bar"><button class="ib" data-a="back" aria-label="Volver">${ic('back')}</button><h1>${MASTER[SCREEN]}</h1>${menuBtn}</div>`;
   else $('#top').innerHTML=`<div class="bar"><button class="ib" data-a="home" aria-label="Eventos">${ic('back')}</button><h1>${esc(e?e.titulo:'Nuevo evento')}</h1>${menuBtn}</div><div class="steps">${STEPS.map(([k,t],i)=>`<button class="${i===idx?'on':i<idx?'done':''}" data-a="step" data-v="${k}" ${!e?'disabled':''} ${i===idx?'aria-current="step"':''}><b>${i<idx?ic('check',13):i+1}</b>${t}</button>`).join('')}</div>`;
   $('#main').innerHTML=V[SCREEN]();
@@ -545,7 +548,7 @@ document.addEventListener('keydown',x=>{if(x.key!=='Enter'&&x.key!=='Escape')ret
 
 /* bienvenida: animación (~1,3 s) + 1 s de pausa, después pasa sola a la app; un toque la saltea */
 function endSplash(){const s=$('#splash');if(!s||s.classList.contains('out'))return;s.classList.add('out');setTimeout(()=>s.remove(),450);}
-setTimeout(endSplash,2300);
+setTimeout(endSplash,2000);
 if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.host)){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 load();
 {const q=new URLSearchParams(location.search).get('db');let saved=null;try{saved=localStorage.getItem(DBKEY);}catch(e){}
