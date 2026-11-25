@@ -335,7 +335,7 @@ function render(){
   const e=ev();if(STEPS.some(x=>x[0]===SCREEN)&&!e&&SCREEN!=='evento')SCREEN='home';
   const idx=STEPS.findIndex(s=>s[0]===SCREEN);
   const menuBtn=syncBadge()+`<button class="ib" data-a="menu" aria-label="Menú">${ic('menu')}</button>`;
-  if(SCREEN==='home') $('#top').innerHTML=`<div class="bar"><img src="isotipo.webp" alt="" width="48" height="30" style="margin-left:6px;flex:none;object-fit:contain"><h1 style="display:flex;flex-direction:column"><span>CCMA</span><small style="font-size:12px;font-weight:500;color:#a9c3d3">Cuentas Claras Mantienen la Amistad</small></h1>${menuBtn}</div>`;
+  if(SCREEN==='home') $('#top').innerHTML=`<div class="bar"><h1 style="display:flex;align-items:center;padding-left:6px"><img src="logo.webp" alt="CCMA · Cuentas Claras Mantienen la Amistad" width="720" height="122" style="height:40px;width:auto;max-width:100%;object-fit:contain"></h1>${menuBtn}</div>`;
   else if(MASTER[SCREEN]) $('#top').innerHTML=`<div class="bar"><button class="ib" data-a="back" aria-label="Volver">${ic('back')}</button><h1>${MASTER[SCREEN]}</h1>${menuBtn}</div>`;
   else $('#top').innerHTML=`<div class="bar"><button class="ib" data-a="home" aria-label="Eventos">${ic('back')}</button><h1>${esc(e?e.titulo:'Nuevo evento')}</h1>${menuBtn}</div><div class="steps">${STEPS.map(([k,t],i)=>`<button class="${i===idx?'on':i<idx?'done':''}" data-a="step" data-v="${k}" ${!e?'disabled':''} ${i===idx?'aria-current="step"':''}><b>${i<idx?ic('check',13):i+1}</b>${t}</button>`).join('')}</div>`;
   $('#main').innerHTML=V[SCREEN]();
