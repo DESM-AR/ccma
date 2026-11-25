@@ -207,26 +207,18 @@ const COLORS=['#1f6f8b','#b5462f','#9e5f00','#6b4fa0','#26784e','#b0346b','#2f6f
 /* colores anteriores con poco contraste para texto blanco → equivalentes accesibles */
 const COLOR_FIX={'#d98e04':'#9e5f00','#2f8a5b':'#26784e','#c2417a':'#b0346b','#3b7fb8':'#2f6fa6','#6f7d87':'#5d6a73'};
 function seedDB(){
-  const people=[{id:'club',nombre:'Club',club:true,pausado:false,alias:'club.padel.mp'}].concat(['Juan','Pedro','Martín','Lucas','Carlos','Diego','Pablo','Andrés'].map((n,i)=>({id:'p'+(i+1),nombre:n,pausado:false,alias:i<3?n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')+'.padel':''})));
+  /* Lista inicial del grupo: la ve cualquiera que abra la app por primera vez */
+  const NOMBRES=['Andrés','Cabeza','Dani','Darío','Gabi','Gera','Julio','Martín','Mauri','Nico','Pablo','Santi'];
+  const people=[{id:'club',nombre:'Club',club:true,pausado:false,alias:''}].concat(NOMBRES.map((n,i)=>({id:'p'+(i+1),nombre:n,alias:'',pausado:false})));
   const cats=[{id:'c1',nombre:'Pádel',color:COLORS[0],pausado:false},{id:'c2',nombre:'Asado',color:COLORS[1],pausado:false}];
-  const P=(id,cs)=>({id,cats:cs});
-  const ev={id:'ev1',titulo:'12° Pádel Day (ejemplo)',cats:['c1','c2'],
-    people:[P('club',[]),P('p1',['c1','c2']),P('p2',['c1']),P('p3',['c1','c2']),P('p4',['c2']),P('p5',['c1','c2']),P('p6',['c1']),P('p7',['c1','c2']),P('p8',['c1','c2'])],
-    gastos:[
-      {id:'g1',concepto:'Canchas',monto:105000,pagador:'club',cat:'c1'},
-      {id:'g2',concepto:'Pelotas y agua',monto:21000,pagador:'p6',cat:'c1'},
-      {id:'g3',concepto:'Medallas',monto:35000,pagador:'p5',cat:'c1'},
-      {id:'g4',concepto:'Servicio de asado',monto:96000,pagador:'club',cat:'c2'},
-      {id:'g5',concepto:'Empanadas',monto:24000,pagador:'p2',cat:'c2'},
-      {id:'g6',concepto:'Bebidas',monto:30000,pagador:'p1',cat:'c2'}]};
-  return {v:3,people,cats,events:[ev],active:null};
+  return {v:4,people,cats,events:[],active:null};
 }
 if(typeof module!=='undefined') module.exports={parseMoney,toC,fmt,liquidate,settle,seedDB};
 </script>
 
 <script>
 "use strict";
-const KEY='padelday.v3';
+const KEY='padelday.v4';
 let DB,SCREEN='home',BACK='home',SH=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -235,7 +227,11 @@ const toInput=c=>(c/100).toFixed(2).replace(/\.00$/,'').replace('.',',');
 const I={back:'<path d="M15 5l-7 7 7 7"/>',x:'<path d="M6 6l12 12M18 6 6 18"/>',plus:'<path d="M12 5v14M5 12h14"/>',check:'<path d="M5 12.5 10 17 19 7"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',chat:'<path d="M4 20l1.5-4A8 8 0 1 1 9 19.5z"/>',copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',pause:'<path d="M9 5v14M15 5v14"/>',play:'<path d="M7 5l12 7-12 7z"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/>',tag:'<path d="M3 12V4h8l10 10-8 8z"/><path d="M7.5 8.5h.01" stroke-width="3"/>',home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',save:'<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>'};
 const ic=(k,s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
 
-function load(){try{const s=localStorage.getItem(KEY);if(s){DB=JSON.parse(s);if(Array.isArray(DB.events)&&Array.isArray(DB.people)){(DB.cats||[]).forEach(c=>{if(COLOR_FIX[c.color])c.color=COLOR_FIX[c.color];});return;}}}catch(e){}DB=seedDB();save();}
+function load(){try{const s=localStorage.getItem(KEY)||migrateV3();if(s){DB=JSON.parse(s);if(Array.isArray(DB.events)&&Array.isArray(DB.people)){(DB.cats||[]).forEach(c=>{if(COLOR_FIX[c.color])c.color=COLOR_FIX[c.color];});return;}}}catch(e){}DB=seedDB();save();}
+/* Si el teléfono tenía datos reales de la versión anterior se conservan; si solo tenía el ejemplo, arranca con la lista nueva */
+function migrateV3(){try{const s=localStorage.getItem('padelday.v3');if(!s)return null;const d=JSON.parse(s);
+  const soloEjemplo=(d.events||[]).every(e=>e.id==='ev1')&&(d.people||[]).every(p=>p.club||/^p[1-8]$/.test(p.id));
+  return soloEjemplo?null:s;}catch(e){return null;}}
 function saveLocal(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
 function save(){saveLocal();if(SYNC.url)queuePush();}
 
