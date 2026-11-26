@@ -108,6 +108,14 @@ input:focus,select:focus{outline:2px solid var(--navy2);outline-offset:-1px}
 .solo{font-size:12.5px;color:var(--muted);width:88px;text-align:center;flex:none}
 .hubn{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;color:#3d4f5b;margin:2px 4px 12px;line-height:1.4}
 .hubn svg{flex:none;color:#e0a100;fill:#f5b301;margin-top:1px}
+.cc{background:#fff;border-radius:16px;padding:12px 14px 10px;margin-bottom:10px;box-shadow:0 1px 2px rgba(15,42,61,.05),0 4px 14px rgba(15,42,61,.05)}
+.cc .cn{display:block;font-size:16px;margin-bottom:4px}
+.cl{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:3px 0;font-size:14px;color:#3d4f5b}
+.cl span:first-child{min-width:0;overflow-wrap:anywhere}
+.cl .num{white-space:nowrap;font-weight:600}
+.cl .neg,.cc .neg{color:var(--red)}.cl .pos{color:var(--green)}
+.cl.ct2{border-top:1px dashed #d5dcdf;margin-top:5px;padding-top:7px;font-size:15px;color:var(--ink)}
+.cl.ct2 b.num{font-weight:800}
 .tipck{display:inline-flex;align-items:center;gap:8px;margin:2px 2px 0;font-size:14px;color:var(--muted);font-weight:600;min-height:44px;cursor:pointer}
 .tipck input{width:20px;height:20px;accent-color:var(--navy);margin:0}
 .tipt{font-size:13.5px;color:var(--muted);margin:6px 2px 0}.tipt b{color:var(--ink)}
@@ -423,7 +431,7 @@ liquidacion(){
   ${e.hub&&L.byId[e.hub]&&tr.length?`<div class="hubn">${ic('star',17)}<span>Todos le transfieren a <b>${esc(pname(e.hub))}</b> y después reparte.</span></div>`:''}
   ${tr.length?`<div class="list">${tr.map((t,i)=>{const al=person(t.para)?.alias;return `<div class="tr${i&&tr[i-1].de===t.de?' same':''}"><div style="flex:1;min-width:0"><div class="w"><b>${esc(pname(t.de))}</b>${ic('arrow',16)}<b>${esc(pname(t.para))}</b></div>${al?`<button class="alias" data-a="copyAlias" data-v="${esc(al)}">${ic('copy',15)} ${esc(al)}</button>`:`<button class="alias none" data-a="mEditPerson" data-id="${t.para}">${ic('plus',15)} Agregar alias</button>`}</div><span class="amt num">${fmt(t.c)}</span></div>`;}).join('')}</div>`:`<div class="ok">${L.total?'Nadie le debe nada a nadie ✅':'Todavía no hay gastos.'}</div>`}
   <div class="sec">Cuenta de cada uno</div>
-  <div class="list">${L.rows.filter(r=>r.consumo||r.pago).sort((a,b)=>b.saldo-a.saldo).map(r=>`<button class="row" data-a="detail" data-id="${r.id}"><div class="m"><b>${esc(pname(r.id))}</b><small class="num">Le toca ${fmt(r.consumo)} · pagó ${fmt(r.pago)}</small></div>${r.saldo>0?`<span class="sal d num">Paga ${fmt(r.saldo)}</span>`:r.saldo<0?`<span class="sal r num">Recibe ${fmt(-r.saldo)}</span>`:'<span class="sal z">Saldado</span>'}</button>`).join('')||'<div class="empty">Sin movimientos.</div>'}</div>`;
+  ${ccHtml(e,L,tr)}`;
 },
 mpersonas(){
   const ps=DB.people.slice().sort((a,b)=>(b.club?1:0)-(a.club?1:0)||(a.pausado-b.pausado)||a.nombre.localeCompare(b.nombre,'es'));
@@ -587,6 +595,19 @@ const A={
   imp:()=>sheet('Pegar respaldo',`<textarea class="wa" id="it" placeholder="Pegá aquí el respaldo"></textarea>`,`<button class="btn pri grow" data-a="impDo">Importar</button>`),
   impDo:async()=>{let d;try{d=JSON.parse($('#it').value);if(!Array.isArray(d.events)||!Array.isArray(d.people)||!Array.isArray(d.cats))throw 0;}catch(e){return toast('El texto no es un respaldo válido');}if(!(await ask('Tus eventos, participantes y categorías actuales se reemplazan por los del respaldo.','Reemplazar datos',true,'¿Importar este respaldo?')))return;DB=d;DB.active=null;save();close();go('home');toast('Respaldo importado');}
 };
+function ccHtml(e,L,tr){
+  const rows=L.rows.filter(r=>!person(r.id)?.club&&(r.consumo||r.pago));
+  if(!rows.length)return '<div class="empty">Sin movimientos.</div>';
+  const m=c=>`<span class="num ${c<0?'neg':'pos'}">${c<0?'− ':'+ '}${fmt(Math.abs(c))}</span>`;
+  const card=r=>{const li=[];
+    e.gastos.filter(g=>g.pagador===r.id).forEach(g=>li.push([`Compra de ${esc(g.concepto)}`,-gC(g)]));
+    tr.filter(t=>t.para===r.id).forEach(t=>li.push([`Recibe transferencia de ${esc(pname(t.de))}`,t.c]));
+    tr.filter(t=>t.de===r.id).forEach(t=>li.push([`Transfiere a ${esc(pname(t.para))}`,-t.c]));
+    const tot=li.reduce((a,x)=>a+x[1],0);
+    return `<div class="cc"><b class="cn">${esc(pname(r.id))}</b>${li.map(x=>`<div class="cl"><span>${x[0]}</span>${m(x[1])}</div>`).join('')}<div class="cl ct2"><b>Total</b><b class="num neg">${tot<0?'− ':''}${fmt(Math.abs(tot))}</b></div></div>`;};
+  const hasBuy=r=>e.gastos.some(g=>g.pagador===r.id);
+  return rows.slice().sort((a,b)=>(hasBuy(b)-hasBuy(a))||pname(a.id).localeCompare(pname(b.id),'es')).map(card).join('');
+}
 function waText(){
   const e=ev(),L=L_(e),tr=settle(L,e.hub),o=[];
   o.push(`🎾 *${e.titulo.toUpperCase()}*`,`Total: ${fmt(L.total)}`,'');
