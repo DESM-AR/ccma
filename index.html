@@ -230,13 +230,14 @@ function fmt(c){c=Math.round(c||0);const neg=c<0;c=Math.abs(c);const p=Math.floo
 function allocate(total,n){const b=Math.floor(total/n),r=total-b*n;return Array.from({length:n},(_,i)=>b+(i<r?1:0));}
 /* saldo = lo que le corresponde (su parte de cada categoría en la que entra) − lo que pagó */
 const gC=g=>Math.round(toC(g.monto)*(100+(Number(g.prop)||0))/100);
-function liquidate(e,cats){
+function liquidate(e,cats,tipTo){
   const rows={};e.people.forEach(p=>rows[p.id]={id:p.id,consumo:0,pago:0,saldo:0,byCat:{}});
   const cs=e.cats.map(id=>{const c=cats.find(x=>x.id===id)||{id,nombre:'(categoría borrada)',color:'#999'};const total=e.gastos.filter(g=>g.cat===id).reduce((a,g)=>a+gC(g),0);const ids=e.people.filter(p=>p.cats.includes(id)).map(p=>p.id);return {id,nombre:c.nombre,color:c.color,total,ids};});
   const warns=[];
   cs.forEach(c=>{if(!c.total)return;if(!c.ids.length){warns.push('Nadie entra en “'+c.nombre+'”: '+fmt(c.total)+' sin repartir.');return;}const a=allocate(c.total,c.ids.length);c.ids.forEach((id,i)=>{rows[id].consumo+=a[i];rows[id].byCat[c.id]=a[i];});});
-  e.gastos.forEach(g=>{if(rows[g.pagador])rows[g.pagador].pago+=gC(g);else warns.push('“'+g.concepto+'” lo pagó alguien que ya no está en el evento.');});
-  const list=e.people.map(p=>rows[p.id]);list.forEach(r=>r.saldo=r.consumo-r.pago);
+  const extra=[];
+  e.gastos.forEach(g=>{const to=tipTo&&rows[g.pagador]?tipTo(g):null;if(to){const base=toC(g.monto);rows[g.pagador].pago+=base;if(!rows[to]){rows[to]={id:to,consumo:0,pago:0,saldo:0,byCat:{}};extra.push(rows[to]);}rows[to].pago+=gC(g)-base;}else if(rows[g.pagador])rows[g.pagador].pago+=gC(g);else warns.push('“'+g.concepto+'” lo pagó alguien que ya no está en el evento.');});
+  const list=e.people.map(p=>rows[p.id]).concat(extra);list.forEach(r=>r.saldo=r.consumo-r.pago);
   return {rows:list,byId:rows,cats:cs,warns,total:e.gastos.reduce((a,g)=>a+gC(g),0),sum:list.reduce((a,r)=>a+r.saldo,0)};
 }
 function settle(L,hub){
@@ -257,7 +258,7 @@ const COLOR_FIX={'#d98e04':'#9e5f00','#2f8a5b':'#26784e','#c2417a':'#b0346b','#3
 function seedDB(){
   /* Lista inicial del grupo: la ve cualquiera que abra la app por primera vez */
   const NOMBRES=['Andrés','Cabeza','Dani','Darío','Gabi','Gera','Julio','Martín','Mauri','Nico','Pablo','Santi'];
-  const people=[{id:'club',nombre:'Club',club:true,pausado:false,alias:''}].concat(NOMBRES.map((n,i)=>({id:'p'+(i+1),nombre:n,alias:'',pausado:false})));
+  const people=[{id:'club',nombre:'Club',club:true,pausado:false,alias:''},{id:'propina',nombre:'Propina',club:true,tip:true,pausado:false,alias:''}].concat(NOMBRES.map((n,i)=>({id:'p'+(i+1),nombre:n,alias:'',pausado:false})));
   const cats=[{id:'c1',nombre:'Pádel',color:COLORS[0],pausado:false,prop:0},{id:'c2',nombre:'Comida',color:COLORS[1],pausado:false,prop:10}];
   return {v:4,people,cats,events:[],active:null};
 }
@@ -275,7 +276,7 @@ const toInput=c=>(c/100).toFixed(2).replace(/\.00$/,'').replace('.',',');
 const I={padel:'<circle cx="12" cy="12" r="8.5"/><path d="M6 6c3.2 3.4 3.2 8.6 0 12M18 6c-3.2 3.4-3.2 8.6 0 12"/>',food:'<path d="M7 3v6.5a2 2 0 0 0 4 0V3M9 11.5V21M17 21V3c-2 1.4-3 3.8-3 7v3.5h3"/>',drink:'<path d="M6 3h12l-1.6 17.5H7.6zM6.5 8.5h11"/>',star:'<path d="M12 3.3l2.7 5.5 6 .9-4.35 4.25 1.03 6L12 17.1l-5.38 2.85 1.03-6L3.3 9.7l6-.9z"/>',back:'<path d="M15 5l-7 7 7 7"/>',x:'<path d="M6 6l12 12M18 6 6 18"/>',plus:'<path d="M12 5v14M5 12h14"/>',check:'<path d="M5 12.5 10 17 19 7"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',chat:'<path d="M4 20l1.5-4A8 8 0 1 1 9 19.5z"/>',copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',pause:'<path d="M9 5v14M15 5v14"/>',play:'<path d="M7 5l12 7-12 7z"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/>',tag:'<path d="M3 12V4h8l10 10-8 8z"/><path d="M7.5 8.5h.01" stroke-width="3"/>',home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',save:'<path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/>'};
 const ic=(k,s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
 
-function load(){try{const s=localStorage.getItem(KEY)||migrateV3();if(s){DB=JSON.parse(s);if(Array.isArray(DB.events)&&Array.isArray(DB.people)){(DB.cats||[]).forEach(c=>{if(COLOR_FIX[c.color])c.color=COLOR_FIX[c.color];if(c.prop==null){if(/^asado$/i.test(c.nombre)){c.nombre='Comida';c.prop=10;}else c.prop=0;}});return;}}}catch(e){}DB=seedDB();save();}
+function load(){try{const s=localStorage.getItem(KEY)||migrateV3();if(s){DB=JSON.parse(s);if(Array.isArray(DB.events)&&Array.isArray(DB.people)){if(!DB.people.some(p=>p.tip))DB.people.push({id:'propina',nombre:'Propina',club:true,tip:true,pausado:false,alias:''});(DB.cats||[]).forEach(c=>{if(COLOR_FIX[c.color])c.color=COLOR_FIX[c.color];if(c.prop==null){if(/^asado$/i.test(c.nombre)){c.nombre='Comida';c.prop=10;}else c.prop=0;}});return;}}}catch(e){}DB=seedDB();save();}
 /* Si el teléfono tenía datos reales de la versión anterior se conservan; si solo tenía el ejemplo, arranca con la lista nueva */
 function migrateV3(){try{const s=localStorage.getItem('padelday.v3');if(!s)return null;const d=JSON.parse(s);
   const soloEjemplo=(d.events||[]).every(e=>e.id==='ev1')&&(d.people||[]).every(p=>p.club||/^p[1-8]$/.test(p.id));
@@ -300,10 +301,11 @@ function toRemote(D){
 }
 function fromRemote(R){
   const s=o=>asArr(o).sort((a,b)=>(a.orden||0)-(b.orden||0));
-  const people=s(R.people).map(p=>({id:p.id,nombre:p.nombre||'',alias:p.alias||'',pausado:!!p.pausado,club:!!p.club,orden:p.orden}));
+  const people=s(R.people).map(p=>({id:p.id,nombre:p.nombre||'',alias:p.alias||'',pausado:!!p.pausado,club:!!p.club,tip:!!p.tip,orden:p.orden}));
   const cats=s(R.cats).map(c=>({id:c.id,nombre:c.nombre||'',color:c.color||COLORS[0],pausado:!!c.pausado,prop:Number(c.prop)||0,orden:c.orden}));
   const events=s(R.events).map(e=>({id:e.id,titulo:e.titulo||'',orden:e.orden,hub:e.hub||'',cats:asArr(e.cats),people:asArr(e.people).map(p=>({id:p.id,cats:asArr(p.cats)})),gastos:asArr(e.gastos).map(g=>({id:g.id,concepto:g.concepto||'',monto:Number(g.monto)||0,pagador:g.pagador||'',cat:g.cat||'',prop:Number(g.prop)||0}))}));
-  if(!people.some(p=>p.club)) people.unshift({id:'club',nombre:'Club',club:true,pausado:false,alias:''});
+  if(!people.some(p=>p.club&&!p.tip)) people.unshift({id:'club',nombre:'Club',club:true,pausado:false,alias:''});
+  if(!people.some(p=>p.tip)) people.push({id:'propina',nombre:'Propina',club:true,tip:true,pausado:false,alias:''});
   return {v:3,people,cats,events,active:null};
 }
 function flat(R){const o={};['people','cats','events'].forEach(k=>{for(const id in (R[k]||{}))o[k+'/'+id]=JSON.stringify(R[k][id]);});return o;}
@@ -359,7 +361,8 @@ const ev=()=>DB.events.find(e=>e.id===DB.active);
 const person=id=>DB.people.find(p=>p.id===id);
 const pname=id=>{const p=person(id);return p?p.nombre:'(borrado)';};
 const catM=id=>DB.cats.find(c=>c.id===id);
-const L_=e=>liquidate(e,DB.cats);
+const TIP_ID=()=>DB.people.find(p=>p.tip)?.id;
+const L_=e=>liquidate(e,DB.cats,g=>{const p=person(g.pagador);return p&&p.club&&!p.tip&&g.prop>0?TIP_ID():null;});
 const catIcon=c=>/p[aá]del|tenis|cancha/i.test(c.nombre)?'padel':/comida|asado|cena|almuerzo|morfi|pizza|parrilla/i.test(c.nombre)?'food':/bebida|birra|cerveza|vino|fernet|tragos?/i.test(c.nombre)?'drink':'';
 const catGlyph=(c,s=19)=>{const k=catIcon(c);return k?ic(k,s):`<span class="lt">${esc((c.nombre||'?').trim().charAt(0).toUpperCase())}</span>`;};
 const ini=n=>esc((n||'?').trim().charAt(0).toUpperCase());
@@ -434,8 +437,8 @@ liquidacion(){
   ${ccHtml(e,L,tr)}`;
 },
 mpersonas(){
-  const ps=DB.people.slice().sort((a,b)=>(b.club?1:0)-(a.club?1:0)||(a.pausado-b.pausado)||a.nombre.localeCompare(b.nombre,'es'));
-  return `<div class="list">${ps.map(p=>`<div class="row ${p.pausado?'dim':''}" style="min-height:54px;padding:6px 6px 6px 14px"><div class="m"><b>${esc(p.nombre)}</b>${p.alias?`<small>Alias: ${esc(p.alias)}</small>`:`<small style="color:#6b7880">Sin alias</small>`}</div>${p.club?'<span class="badge club">Fijo</span>':p.pausado?'<span class="badge">En pausa</span>':''}<div class="act"><button class="ib" data-a="mEditPerson" data-id="${p.id}" aria-label="Editar">${ic('edit',19)}</button>${p.club?'':`<button class="ib" data-a="mPausePerson" data-id="${p.id}" aria-label="${p.pausado?'Reactivar':'Pausar'}">${ic(p.pausado?'play':'pause',19)}</button><button class="ib" data-a="mDelPerson" data-id="${p.id}" aria-label="Eliminar">${ic('trash',19)}</button>`}</div></div>`).join('')}</div>`;
+  const ps=DB.people.slice().sort((a,b)=>(b.club?1:0)-(a.club?1:0)||(a.tip?1:0)-(b.tip?1:0)||(a.pausado-b.pausado)||a.nombre.localeCompare(b.nombre,'es'));
+  return `<div class="list">${ps.map(p=>`<div class="row ${p.pausado?'dim':''}" style="min-height:54px;padding:6px 6px 6px 14px"><div class="m"><b>${esc(p.nombre)}</b>${p.alias?`<small>Alias: ${esc(p.alias)}</small>`:`<small style="color:#6b7880">Sin alias</small>`}${p.tip?`<small style="color:#6b7880">Recibe la propina de lo que cobra el Club</small>`:''}</div>${p.club?'<span class="badge club">Fijo</span>':p.pausado?'<span class="badge">En pausa</span>':''}<div class="act"><button class="ib" data-a="mEditPerson" data-id="${p.id}" aria-label="Editar">${ic('edit',19)}</button>${p.club?'':`<button class="ib" data-a="mPausePerson" data-id="${p.id}" aria-label="${p.pausado?'Reactivar':'Pausar'}">${ic(p.pausado?'play':'pause',19)}</button><button class="ib" data-a="mDelPerson" data-id="${p.id}" aria-label="Eliminar">${ic('trash',19)}</button>`}</div></div>`).join('')}</div>`;
 },
 mcats(){
   return `<div class="list">${DB.cats.map(c=>`<div class="row ${c.pausado?'dim':''}" style="min-height:54px;padding:6px 6px 6px 14px"><span class="dot" style="--c:${c.color};width:12px;height:12px"></span><div class="m"><b>${esc(c.nombre)}</b>${c.prop?`<small>Propina ${c.prop}%</small>`:''}</div>${c.pausado?'<span class="badge">En pausa</span>':''}<div class="act"><button class="ib" data-a="mEditCat" data-id="${c.id}" aria-label="Editar">${ic('edit',19)}</button><button class="ib" data-a="mPauseCat" data-id="${c.id}" aria-label="${c.pausado?'Reactivar':'Pausar'}">${ic(c.pausado?'play':'pause',19)}</button><button class="ib" data-a="mDelCat" data-id="${c.id}" aria-label="Eliminar">${ic('trash',19)}</button></div></div>`).join('')||'<div class="empty">Sin categorías.</div>'}</div>`;
@@ -472,7 +475,7 @@ function propField(){
   if(!c||!p)return '';
   return `<label class="tipck"><input type="checkbox" id="gtip" data-a="tipTog" ${SH.tip?'checked':''}><span>Sumar propina del ${p}%</span></label>${SH.tip?`<p class="tipt" id="ptot">${tipText()}</p>`:''}`;
 }
-function tipText(){const m=Math.round((parseMoney(SH.monto)||0)*100),p=tipPct();return m?`Se reparte <b class="num">${fmt(Math.round(m*(100+p)/100))}</b> (${fmt(m)} + ${fmt(Math.round(m*p/100))} de propina)`:`Se suma un ${p}% al monto.`;}
+function tipText(){const m=Math.round((parseMoney(SH.monto)||0)*100),p=tipPct();const pp=person(SH.pagador),nt=pp&&pp.club&&!pp.tip?` La propina se transfiere al alias de ${esc(pname(TIP_ID()))}, no al del Club.`:'';return (m?`Se reparte <b class="num">${fmt(Math.round(m*(100+p)/100))}</b> (${fmt(m)} + ${fmt(Math.round(m*p/100))} de propina).`:`Se suma un ${p}% al monto.`)+nt;}
 function saveGasto(otro){
   const e=ev(), monto=parseMoney(SH.monto), errs=[];
   if(!SH.concepto.trim()) errs.push('Escribí el concepto.');
@@ -515,7 +518,7 @@ const A={
     if(e){e.titulo=t;save();}
     else{
       const cats=DB.cats.filter(c=>!c.pausado).map(c=>c.id);
-      const people=DB.people.filter(p=>!p.pausado||p.club).map(p=>({id:p.id,cats:p.club?[]:cats.slice()}));
+      const people=DB.people.filter(p=>(!p.pausado||p.club)&&!p.tip).map(p=>({id:p.id,cats:p.club?[]:cats.slice()}));
       const n={id:'ev'+uid(),titulo:t,orden:Date.now(),cats,people,gastos:[]};DB.events.push(n);DB.active=n.id;save();
     }
     go('gastos');
@@ -532,7 +535,7 @@ const A={
   evPerson:d=>{const e=ev(),n=e.gastos.filter(g=>g.pagador===d.id).length;
     sheet(pname(d.id),n?`<p class="hint">Pagó ${n} gasto(s) en este evento. Para quitarlo, primero cambiá o borrá esos gastos.</p>`:`<p class="hint">Si no vino a este evento, quitalo de la lista. Sigue en tus participantes para los próximos.</p>`,n?'':`<button class="btn red grow" data-a="evRemove" data-id="${d.id}">Quitar de este evento</button>`);},
   evRemove:d=>{close();commit(()=>{const e=ev();e.people=e.people.filter(p=>p.id!==d.id);},pname(d.id)+' quitado del evento',true);},
-  sumar:()=>{const e=ev(),out=DB.people.filter(p=>!e.people.some(x=>x.id===p.id));
+  sumar:()=>{const e=ev(),out=DB.people.filter(p=>!p.tip&&!e.people.some(x=>x.id===p.id));
     sheet('Sumar al evento',out.length?`<div class="list">${out.map(p=>`<button class="row" data-a="evAdd" data-id="${p.id}"><div class="m"><b>${esc(p.nombre)}</b>${p.pausado?'<small>En pausa</small>':''}</div>${ic('plus',20)}</button>`).join('')}</div>`:'<p class="hint">Ya están todos. Para alguien nuevo, usá Menú → Participantes.</p>',`<button class="btn grow" data-a="newFromEvent">${ic('plus',18)} Participante nuevo</button>`);},
   evAdd:d=>{close();commit(()=>{const e=ev();e.people.push({id:d.id,cats:person(d.id).club?[]:e.cats.slice()});},pname(d.id)+' sumado');},
   newFromEvent:()=>{close();go('mpersonas');},
@@ -617,7 +620,7 @@ function waText(){
 }
 
 document.addEventListener('click',x=>{if(x.target.id==='ov'){close();return;}const t=x.target.closest('[data-a]');if(!t||t.disabled)return;const f=A[t.dataset.a];if(f)f(Object.assign({},t.dataset));});
-document.addEventListener('input',x=>{const t=x.target;if(t.dataset.s&&SH){SH[t.dataset.s]=t.value;const inv=t.closest('.invalid')||(t.classList.contains('invalid')?t:null);if(inv){inv.classList.remove('invalid');t.removeAttribute('aria-invalid');const fe=t.closest('.field')?.querySelector('.field-err');fe&&fe.remove();}}if(t.id==='gm'&&$('#ptot'))$('#ptot').innerHTML=tipText();if(t.id==='wt'){const l=$('#wl');if(l)l.href='https://wa.me/?text='+encodeURIComponent(t.value);}});
+document.addEventListener('input',x=>{const t=x.target;if(t.dataset.s&&SH){SH[t.dataset.s]=t.value;const inv=t.closest('.invalid')||(t.classList.contains('invalid')?t:null);if(inv){inv.classList.remove('invalid');t.removeAttribute('aria-invalid');const fe=t.closest('.field')?.querySelector('.field-err');fe&&fe.remove();}}if((t.id==='gm'||t.id==='gp')&&$('#ptot'))$('#ptot').innerHTML=tipText();if(t.id==='wt'){const l=$('#wl');if(l)l.href='https://wa.me/?text='+encodeURIComponent(t.value);}});
 document.addEventListener('keydown',x=>{if(x.key!=='Enter'&&x.key!=='Escape')return;if(x.key==='Escape'){if($('#ov').classList.contains('open'))close();return;}
   const id=x.target.id;if(id==='ft')A.saveEvent();else if(id==='mp')A.mAddPerson();else if(id==='mc')A.mAddCat();else if(id==='gc'){x.preventDefault();$('#gm').focus();}else if(id==='nn'){const b=document.querySelector('.sh-f [data-a]');b&&b.click();}});
 
