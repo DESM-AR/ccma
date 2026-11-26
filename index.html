@@ -603,7 +603,7 @@ document.addEventListener('keydown',x=>{if(x.key!=='Enter'&&x.key!=='Escape')ret
 /* bienvenida: animación (~1,3 s) + 1 s de pausa, después pasa sola a la app; un toque la saltea */
 function endSplash(){const s=$('#splash');if(!s||s.classList.contains('out'))return;s.classList.add('out');setTimeout(()=>s.remove(),450);}
 setTimeout(endSplash,2000);
-if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.host)){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!/claude\.ai|claudeusercontent/.test(location.host)){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(!document.hidden)r.update();});}).catch(()=>{});let swR=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(swR)return;swR=true;if(!document.querySelector('#ov.open'))location.reload();});}
 load();
 {const q=new URLSearchParams(location.search).get('db');let saved=null;try{saved=localStorage.getItem(DBKEY);}catch(e){}
  const u=cleanUrl(q||saved||DEFAULT_DB);
