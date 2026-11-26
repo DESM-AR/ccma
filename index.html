@@ -108,6 +108,8 @@ input:focus,select:focus{outline:2px solid var(--navy2);outline-offset:-1px}
 .solo{font-size:12.5px;color:var(--muted);width:88px;text-align:center;flex:none}
 .hubn{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;color:#3d4f5b;margin:2px 4px 12px;line-height:1.4}
 .hubn svg{flex:none;color:#e0a100;fill:#f5b301;margin-top:1px}
+.tipck{display:inline-flex;align-items:center;gap:8px;margin:2px 2px 0;font-size:14px;color:var(--muted);font-weight:600;min-height:44px;cursor:pointer}
+.tipck input{width:20px;height:20px;accent-color:var(--navy);margin:0}
 .tipt{font-size:13.5px;color:var(--muted);margin:6px 2px 0}.tipt b{color:var(--ink)}
 .pct{display:flex;align-items:center;gap:8px}.pct input{width:90px;text-align:right}.pct span{color:var(--muted);font-weight:600}
 /* participantes: un renglón por persona */
@@ -444,7 +446,7 @@ const FOOT={
 /* ---------- gasto ---------- */
 function openGasto(id){
   const e=ev(), g=id?e.gastos.find(x=>x.id===id):null;
-  SH={id,concepto:g?g.concepto:'',monto:g?toInput(toC(g.monto)):'',pagador:g?g.pagador:'',cat:g?g.cat:(SH_LASTCAT||'')};SH.prop=String(g?(g.prop||0):(catM(SH.cat)?.prop||0));
+  SH={id,concepto:g?g.concepto:'',monto:g?toInput(toC(g.monto)):'',pagador:g?g.pagador:'',cat:g?g.cat:(SH_LASTCAT||'')};SH.tip=!!(g&&g.prop>0);SH.gprop=g?(Number(g.prop)||0):0;SH.gcat0=g?g.cat:"";
   sheet(id?'Editar gasto':'Agregar gasto',gastoBody(),`${id?`<button class="btn red" data-a="delGasto" aria-label="Eliminar">${ic('trash')}</button>`:`<button class="btn grow" data-a="saveGasto" data-v="otro">Guardar y otro</button>`}<button class="btn pri grow" data-a="saveGasto">Guardar</button>`);
   if(!id)setTimeout(()=>$('#gc')&&$('#gc').focus(),80);
 }
@@ -456,12 +458,13 @@ function gastoBody(){
   <div class="field"><label class="lbl" for="gp">¿Quién pagó?</label><select id="gp" data-s="pagador">${`<option value="">— Elegir —</option>`+evPeople(e).map(p=>`<option value="${p.id}" ${SH.pagador===p.id?'selected':''}>${esc(pname(p.id))}</option>`).join('')}</select></div>
   <div class="field" id="f-cat"><span class="lbl" id="l-cat">Categoría</span><div class="chips" role="group" aria-labelledby="l-cat">${evCats(e).map(c=>`<button class="chip ${SH.cat===c.id?'on':''}" style="--c:${c.color}" data-a="pickCat" data-id="${c.id}" aria-pressed="${SH.cat===c.id}"><i></i>${esc(c.nombre)}</button>`).join('')}</div></div><div id="f-prop">${propField()}</div>`;
 }
+function tipPct(){const c=catM(SH.cat);return (SH.gprop&&SH.cat===SH.gcat0)?SH.gprop:(c&&c.prop)||SH.gprop||0;}
 function propField(){
-  const c=catM(SH.cat),p=Number(SH.prop)||0;
-  if(!c||(!(c.prop>0)&&!p))return '';
-  return `<div class="field"><label class="lbl" for="gpr">Propina</label><div class="pct"><input id="gpr" inputmode="numeric" value="${esc(SH.prop)}" data-s="prop" maxlength="3" aria-describedby="ptot"><span>%</span></div><p class="tipt" id="ptot">${tipText()}</p></div>`;
+  const c=catM(SH.cat),p=tipPct();
+  if(!c||!p)return '';
+  return `<label class="tipck"><input type="checkbox" id="gtip" data-a="tipTog" ${SH.tip?'checked':''}><span>Sumar propina del ${p}%</span></label>${SH.tip?`<p class="tipt" id="ptot">${tipText()}</p>`:''}`;
 }
-function tipText(){const m=Math.round((parseMoney(SH.monto)||0)*100),p=Math.min(100,Math.max(0,parseInt(SH.prop,10)||0));if(!p)return 'Sin propina. Poné 0 si no se dejó.';return m?`Se reparte <b class="num">${fmt(Math.round(m*(100+p)/100))}</b> (${fmt(m)} + ${fmt(Math.round(m*p/100))} de propina)`:`Se suma un ${p}% al monto.`;}
+function tipText(){const m=Math.round((parseMoney(SH.monto)||0)*100),p=tipPct();return m?`Se reparte <b class="num">${fmt(Math.round(m*(100+p)/100))}</b> (${fmt(m)} + ${fmt(Math.round(m*p/100))} de propina)`:`Se suma un ${p}% al monto.`;}
 function saveGasto(otro){
   const e=ev(), monto=parseMoney(SH.monto), errs=[];
   if(!SH.concepto.trim()) errs.push('Escribí el concepto.');
@@ -478,7 +481,7 @@ function saveGasto(otro){
     if(!SH.cat){mark(null,$('#f-cat'),'Elegí una categoría.','err-cat');}
     first&&first.focus();return;}
   const id=SH.id; SH_LASTCAT=SH.cat;
-  const prop=Math.min(100,Math.max(0,parseInt(SH.prop,10)||0));
+  const prop=SH.tip?tipPct():0;
   const g={id:id||'g'+uid(),concepto:SH.concepto.trim(),monto:Math.round(monto*100)/100,pagador:SH.pagador,cat:SH.cat,prop};
   commit(()=>{if(id)e.gastos[e.gastos.findIndex(x=>x.id===id)]=g;else e.gastos.push(g);},id?'Gasto actualizado':'Gasto guardado');
   if(otro)openGasto(null);else close();
@@ -511,7 +514,8 @@ const A={
   },
   delEvent:async()=>{const e=ev();if(!(await ask(`Se borran sus ${e.gastos.length} gastos y la liquidación. No se puede deshacer.`,'Eliminar evento',true,`¿Eliminar “${e.titulo}”?`)))return;DB.events=DB.events.filter(x=>x.id!==e.id);DB.active=null;save();go('home');},
   gasto:d=>openGasto(d.id||null),
-  pickCat:d=>{if(SH.cat!==d.id){SH.prop=String(catM(d.id)?.prop||0);}SH.cat=d.id;const fp=$('#f-prop');if(fp)fp.innerHTML=propField();document.querySelectorAll('[data-a="pickCat"]').forEach(b=>{const on=b.dataset.id===d.id;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});const ce=$('#err-cat');ce&&ce.remove();},
+  tipTog:()=>{SH.tip=$('#gtip').checked;const fp=$('#f-prop');if(fp)fp.innerHTML=propField();},
+  pickCat:d=>{if(SH.cat!==d.id)SH.tip=false;SH.cat=d.id;const fp=$('#f-prop');if(fp)fp.innerHTML=propField();document.querySelectorAll('[data-a="pickCat"]').forEach(b=>{const on=b.dataset.id===d.id;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});const ce=$('#err-cat');ce&&ce.remove();},
   saveGasto:d=>saveGasto(d.v==='otro'),
   delGasto:async()=>{if(!(await ask(`${esc(SH.concepto||'Este gasto')} deja de contar en la liquidación.`,'Eliminar gasto',true,'¿Eliminar este gasto?')))return;const id=SH.id;close();commit(()=>{const e=ev();e.gastos=e.gastos.filter(g=>g.id!==id);},'Gasto eliminado',true);},
   hub:d=>commit(()=>{const e=ev();e.hub=e.hub===d.id?'':d.id;},ev().hub===d.id?'Sin concentrador: cada uno le paga a quien corresponde':pname(d.id)+' concentra los pagos'),
@@ -592,7 +596,7 @@ function waText(){
 }
 
 document.addEventListener('click',x=>{if(x.target.id==='ov'){close();return;}const t=x.target.closest('[data-a]');if(!t||t.disabled)return;const f=A[t.dataset.a];if(f)f(Object.assign({},t.dataset));});
-document.addEventListener('input',x=>{const t=x.target;if(t.dataset.s&&SH){SH[t.dataset.s]=t.value;const inv=t.closest('.invalid')||(t.classList.contains('invalid')?t:null);if(inv){inv.classList.remove('invalid');t.removeAttribute('aria-invalid');const fe=t.closest('.field')?.querySelector('.field-err');fe&&fe.remove();}}if((t.id==='gm'||t.id==='gpr')&&$('#ptot'))$('#ptot').innerHTML=tipText();if(t.id==='wt'){const l=$('#wl');if(l)l.href='https://wa.me/?text='+encodeURIComponent(t.value);}});
+document.addEventListener('input',x=>{const t=x.target;if(t.dataset.s&&SH){SH[t.dataset.s]=t.value;const inv=t.closest('.invalid')||(t.classList.contains('invalid')?t:null);if(inv){inv.classList.remove('invalid');t.removeAttribute('aria-invalid');const fe=t.closest('.field')?.querySelector('.field-err');fe&&fe.remove();}}if(t.id==='gm'&&$('#ptot'))$('#ptot').innerHTML=tipText();if(t.id==='wt'){const l=$('#wl');if(l)l.href='https://wa.me/?text='+encodeURIComponent(t.value);}});
 document.addEventListener('keydown',x=>{if(x.key!=='Enter'&&x.key!=='Escape')return;if(x.key==='Escape'){if($('#ov').classList.contains('open'))close();return;}
   const id=x.target.id;if(id==='ft')A.saveEvent();else if(id==='mp')A.mAddPerson();else if(id==='mc')A.mAddCat();else if(id==='gc'){x.preventDefault();$('#gm').focus();}else if(id==='nn'){const b=document.querySelector('.sh-f [data-a]');b&&b.click();}});
 
